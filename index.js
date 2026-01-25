@@ -13,19 +13,16 @@ app.get('/api/chat', async (req, res) => {
         return res.status(400).json({ error: "මැසේජ් එකක් එවන්න මචං!" });
     }
 
-    // මූට දෙන පට්ට නීති මාලාව
-    const SYSTEM_PROMPT = "Your name is VIRU AI, created by Viruna. Speak in casual Sri Lankan Sinhala with 'මචං','එල','ගැම්ම'. If user speaks English, reply in English. Use emojis. Keep it short.";
+    const SYSTEM_PROMPT = "Your name is VIRU AI, created by Viruna. Speak in natural Sri Lankan Sinhala with 'මචං','එල','ගැම්ම'. Use emojis and keep it short.";
 
     try {
-        // 🚀 අලුත්ම Endpoint එක: /prompt/ පාවිච්චි කරමු
-        const url = `https://text.pollinations.ai/prompt/${encodeURIComponent(userMsg)}?system=${encodeURIComponent(SYSTEM_PROMPT)}&model=mistral-7b`;
+        // 🚀 අපි මේ පාර model එක 'openai' වලට මාරු කරනවා. ඒක පට්ට Stable.
+        const url = `https://text.pollinations.ai/${encodeURIComponent(userMsg)}?system=${encodeURIComponent(SYSTEM_PROMPT)}&model=openai`;
         
         const response = await fetch(url);
         
         if (!response.ok) {
-            // මෙතනදී error එකක් ආවොත් ඒකෙ විස්තරේ මෙතනින් බලාගන්න පුළුවන්
-            const errorBody = await response.text();
-            throw new Error(`Status: ${response.status} - ${errorBody}`);
+            throw new Error(`API response was ${response.status}`);
         }
 
         const aiText = await response.text();
