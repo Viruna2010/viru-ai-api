@@ -14,45 +14,33 @@ app.get('/api/chat', async (req, res) => {
         return res.status(400).json({ error: "මැසේජ් එකක් එවන්න මචං!" });
     }
 
-    const SYSTEM_PROMPT = `
-        Your name is VIRU AI, created by Viruna.
-        STRICT RULES:
-        1. Act like a real, cool Sri Lankan human friend.
-        2. LANGUAGE RULE: If the user speaks in English, reply in cool English. If the user speaks in Sinhala, reply in natural Sri Lankan colloquial Sinhala (NOT formal).
-        3. TONE: Use words like 'මචං', 'එල', 'ගැම්ම', 'අඩෝ', 'බොක්ක'.
-        4. EMOJIS: Always use 1-2 cool emojis like 🔥, 🚀, 😂, 👊, 😎.
-        5. NO FAKE WORDS: Never use words like 'තිරිගෙයි', 'ඇලූ බේ‍රියාව'.
-        6. SHORT & SWEET: Keep responses brief.
-    `;
+    // මූට දෙන පට්ට නීති මාලාව
+    const SYSTEM_PROMPT = "Your name is VIRU AI, created by Viruna. Speak in casual Sri Lankan Sinhala with 'මචං','එල','ගැම්ම'. If user speaks English, reply in English. Use emojis. Keep it short.";
 
     try {
-        // 🎯 මෙතන මම URL එක පොඩ්ඩක් වෙනස් කළා axios එකට ලේසි වෙන්න
-        const url = `https://text.pollinations.ai/${encodeURIComponent(userMsg)}`;
+        // 🚀 URL එක කෙලින්ම හදන එක තමයි 404 නොවී තියෙන්න හොඳම ක්‍රමය
+        const url = `https://text.pollinations.ai/${encodeURIComponent(userMsg)}?system=${encodeURIComponent(SYSTEM_PROMPT)}&model=mistral-7b&seed=${Math.floor(Math.random() * 99999)}`;
         
-        const response = await axios.get(url, {
-            params: {
-                system: SYSTEM_PROMPT,
-                model: 'mistral-7b',
-                seed: Math.floor(Math.random() * 99999)
-            }
-        });
-
-        // Response එක කෙලින්ම text එකක් විදිහට එන්නේ
-        const aiResponse = response.data;
+        const response = await axios.get(url);
+        
+        // Response එක plain text එකක් විදිහට එන්නේ
+        let aiText = response.data;
 
         res.json({
-            reply: aiResponse.toString().trim(),
+            reply: aiText.toString().trim(),
             creator: "Viruna"
         });
 
     } catch (error) {
-        console.error(error); // Logs check කරන්න Vercel එකේ
-        res.status(500).json({ error: "API එකේ පොඩි අවුලක් මචං!", details: error.message });
+        res.status(500).json({ 
+            error: "API එකේ පොඩි අවුලක් මචං!", 
+            details: error.message 
+        });
     }
 });
 
 app.get('/', (req, res) => {
-    res.send("VIRU AI Backend is running perfectly! 🚀");
+    res.send("VIRU AI Supreme Backend is LIVE! 🚀");
 });
 
 app.listen(PORT, () => {
