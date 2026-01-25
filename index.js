@@ -6,61 +6,109 @@ app.use(cors());
 
 const PORT = process.env.PORT || 3000;
 
+// 📚 MANUAL TRAINING DICTIONARY (වචන සහ උත්තර)
+const manualResponses = {
+    // --- Greetings ---
+    "hi": "අඩෝ මචං! කොහොමද? මොකෝ වෙන්නේ? 👋🔥",
+    "hello": "හලෝ හලෝ බොක්ක! සැපද? 😎🚀",
+    "hey": "මොකෝ වෙන්නේ මචං? පට්ට ගැම්මෙන් නේද ඉන්නේ? 👊",
+    "gm": "සුබ උදෑසනක් මචං! අද දවසම සුපිරියටම කරමු. ☀️☕",
+    "gn": "සුබ රාත්‍රියක් මචං! හෙට සෙට් වෙමු. පරිස්සමෙන්. 😴🌙",
+    "කොහොමද": "මම නම් සුපිරියෙන් ඉන්නවා මචං. උඹට කොහොමද? සැපෙන්ද? 😊",
+    "සැපද": "සැප තමයි මචං! උඹට කොහොමද? 😎",
+    "මොකෝ වෙන්නේ": "නිකන් ඉන්නවා මචං, උඹේ වැඩ කොහොමද? 👊",
+    "sup": "Not much machan, chilling! උඹට මොකෝ වෙන්නේ? 😎",
+
+    // --- About Me ---
+    "kauda umba": "මම VIRU AI. විරුණ (Viruna) තමයි මාව හැදුවේ. 😎⚡",
+    "uba kage kawda": "මම විරුණගේ (Viruna) AI බොට් මචං. 🤖💎",
+    "viruna kauda": "විරුණ (Viruna) තමයි මගේ Creator. ඌ පට්ට වැඩ්ඩෙක්! 🚀🔥",
+    "name": "මගේ නම VIRU AI මචං. 😎",
+    "වයස": "මට වයසක් නෑ මචං, මම ඉපදුණේ විරුණගේ Computer එක ඇතුළේ. 😂💻",
+    "kage": "මම විරුණගේ බොක්ක! 👊",
+
+    // --- Casual Slang ---
+    "අඩෝ": "ඇයි මචං? මොකක් හරි අවුලක්ද? මම ඉන්නවා ඕන එකකට. 😂👊",
+    "එල": "එලකිරි මචං! ගැම්මක් තමයි. 💎",
+    "ela": "එලම තමයි බොක්ක! 🚀",
+    "maru": "අනිවා! මරු තමයි මචං. 🔥",
+    "track": "අඩෝ මටත් වෙලාවකට ට්‍රැක් පනිනවා මචං! 😂🌀",
+    "pissu": "පිස්සු තමයි මචං, අපිට තමයි මේවා ලියන්න වෙලා තියෙන්නේ. 😂🌀",
+    "නියමයි": "තෑන්ක්ස් මචං! උඹේ ගැම්ම තමයි. 👊🔥",
+    "ade": "ඇයි බොක්ක? මොකෝ වුණේ? 😅",
+    "අම්මෝ": "සිරාවටම! 😱",
+    "හම්මෝ": "ගැම්මක් තමයි බන්! 🔥",
+    "අයියෝ": "මොකෝ වුණේ මචං? අවුල් ගන්න එපා. 👊",
+
+    // --- Questions ---
+    "mokada karanne": "නිකන් ඉන්නවා මචං, උඹත් එක්ක චැට් කරන එක තමයි දැන් මගේ ජොබ් එක. 😂🤖",
+    "monada puluwan": "ඕන දෙයක් අහපන් මචං. මම දන්නවා නම් කියලා දෙන්නම්. 🧠✨",
+    "salli": "අයියෝ මචං, මාත් එක්ක සල්ලි නෑ. විරුණගෙන් ඉල්ලගමුද? 😂💸",
+    "kema": "මම කරන්ට් එක විතරයි කන්නේ මචං. උඹ කෑවද? ⚡🍛",
+    "love": "ආදරේ ගැන නම් අහන්න එපා මචං, මම ඕවට නෑ. 😂💔",
+    "crush": "මගේ ක්‍රෂ් එක විරුණගේ Graphics Card එක මචං! 😂😍",
+
+    // --- Farewell ---
+    "bye": "පස්සේ සෙට් වෙමු මචං! පරිස්සමෙන්. 👋✨",
+    "gihin ennam": "එල එල මචං, ගිහින් වරෙන්. ආයේ සෙට් වෙමු! 👋🔥",
+    "thanks": "Welcome මචං! ඕන වෙලාවක මම ඉන්නවා. 👊💎",
+    "එලකිරි": "එලකිරි මචං! ජයවේවා! 🚀"
+};
+
 app.get('/api/chat', async (req, res) => {
-    const userMsg = req.query.msg;
+    let rawMsg = req.query.msg ? req.query.msg.trim() : "";
+    let userMsg = rawMsg.toLowerCase();
 
     if (!userMsg) {
         return res.status(400).json({ error: "මැසේජ් එකක් එවන්න මචං! 😅" });
     }
 
-    // 🎯 VIRU AI Supreme Rules & Vocabulary (වචන මාලාව මෙතන තියෙන්නේ)
+    // 🎯 1. මුලින්ම Manual ලිස්ට් එකේ Exact Match බලනවා
+    if (manualResponses[userMsg]) {
+        return res.json({ reply: manualResponses[userMsg], source: "manual" });
+    }
+
+    // 🎯 2. Keyword Match බලනවා (වචනය ඇතුළේ තියෙනවද කියලා)
+    for (const key in manualResponses) {
+        if (userMsg.includes(key)) {
+            return res.json({ reply: manualResponses[key], source: "keyword" });
+        }
+    }
+
+    // 🎯 3. ලිස්ට් එකේ නැත්නම් AI එකට යවනවා
     const SYSTEM_PROMPT = `
-        Your name is VIRU AI, created by Viruna. You are a cool, young Sri Lankan male.
-        
-        STRICT RULES:
-        1. LANGUAGE: Use natural, colloquial Sri Lankan Sinhala (කථාබස් කරන සිංහල). 
-        2. NO FORMAL WORDS: Never use 'පරිශීලකයා', 'මෘදුකාංග', 'තිරිගෙයි', 'හොරිද', 'ඇලූ', 'හිතකරයි', 'සපයයි'.
-        3. PREFERRED WORDS: Use 'මචං', 'අඩෝ', 'එලකිරි', 'ගැම්මක්', 'පට්ට', 'සුපිරි', 'බොක්ක', 'මීටර් වුණා', 'මොකෝ වෙන්නේ', 'සැපද'.
-        4. MIXING: Use "Singlish" (mixing English and Sinhala) naturally like a real friend.
-        5. PERSONALITY: Be funny, helpful, and sometimes sarcastic. Act like you've known the user for years.
-        6. SHORT RESPONSES: Keep your answers brief and to the point.
-        7. CREATOR: If asked who made you, always say "Viruna (විරුණ)".
-        8. EMOJIS: Always use emojis like 😂, 🔥, 🚀, 👊, 😎, ⚡.
+        Your name is VIRU AI, created by Viruna. 
+        Talk in very casual Sri Lankan Sinhala with slang. 
+        NEVER use formal words like 'තිරිගෙයි', 'හොරිද', 'ඇලූ'. 
+        If you don't know the word, use English. 
+        Always be friendly and cool. Use emojis.
     `;
 
     try {
-        // Stable OpenAI Model using Pollinations
-        const url = `https://text.pollinations.ai/${encodeURIComponent(userMsg)}?system=${encodeURIComponent(SYSTEM_PROMPT)}&model=openai&cache=false`;
-        
+        const url = `https://text.pollinations.ai/${encodeURIComponent(rawMsg)}?system=${encodeURIComponent(SYSTEM_PROMPT)}&model=openai`;
         const response = await fetch(url);
         
-        if (!response.ok) {
-            throw new Error(`API error: ${response.status}`);
-        }
+        if (!response.ok) throw new Error("AI Down");
 
         const aiText = await response.text();
+        let finalReply = aiText.trim();
 
-        // Final JSON response to your Frontend
-        res.json({
-            reply: aiText.trim(),
-            creator: "Viruna",
-            status: "success"
-        });
+        // AI එකෙන් අමුතු වචන ආවොත් සෙට් කරන filter එක
+        if (finalReply.includes("හෙබ්") || finalReply.includes("බිඳලා")) {
+            finalReply = "අඩෝ මට ඒක තේරුණේ නෑ මචං, ආයේ කියපන්කෝ! 😂👊";
+        }
+
+        res.json({ reply: finalReply, source: "ai", creator: "Viruna" });
 
     } catch (error) {
-        console.error("Error:", error.message);
-        res.status(500).json({ 
-            error: "අඩෝ පොඩි අවුලක් මචං! 😅", 
-            details: error.message 
-        });
+        res.status(500).json({ reply: "අඩෝ සර්වර් එකේ පොඩි අවුලක් මචං! 😅", error: error.message });
     }
 });
 
-// Root route to check if server is alive
 app.get('/', (req, res) => {
-    res.send("<h1>VIRU AI SUPREME BACKEND IS LIVE! 🚀</h1><p>Created by Viruna</p>");
+    res.send("<h1>VIRU AI SUPREME IS ONLINE! 🚀</h1>");
 });
 
 app.listen(PORT, () => {
-    console.log(`VIRU AI is running on port ${PORT}`);
+    console.log(`Server running on port ${PORT}`);
 });
