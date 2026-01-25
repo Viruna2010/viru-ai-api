@@ -1,6 +1,5 @@
 const express = require('express');
 const cors = require('cors');
-const axios = require('axios');
 
 const app = express();
 app.use(cors());
@@ -14,24 +13,27 @@ app.get('/api/chat', async (req, res) => {
         return res.status(400).json({ error: "මැසේජ් එකක් එවන්න මචං!" });
     }
 
-    // මූට දෙන පට්ට නීති මාලාව
     const SYSTEM_PROMPT = "Your name is VIRU AI, created by Viruna. Speak in casual Sri Lankan Sinhala with 'මචං','එල','ගැම්ම'. If user speaks English, reply in English. Use emojis. Keep it short.";
 
     try {
-        // 🚀 URL එක කෙලින්ම හදන එක තමයි 404 නොවී තියෙන්න හොඳම ක්‍රමය
-        const url = `https://text.pollinations.ai/${encodeURIComponent(userMsg)}?system=${encodeURIComponent(SYSTEM_PROMPT)}&model=mistral-7b&seed=${Math.floor(Math.random() * 99999)}`;
+        // Axios වෙනුවට Native Fetch පාවිච්චි කරමු - මේක වඩාත් Stable
+        const url = `https://text.pollinations.ai/${encodeURIComponent(userMsg)}?system=${encodeURIComponent(SYSTEM_PROMPT)}&model=mistral-7b&cache=false`;
         
-        const response = await axios.get(url);
+        const response = await fetch(url);
         
-        // Response එක plain text එකක් විදිහට එන්නේ
-        let aiText = response.data;
+        if (!response.ok) {
+            throw new Error(`Pollinations API error: ${response.status}`);
+        }
+
+        const aiText = await response.text();
 
         res.json({
-            reply: aiText.toString().trim(),
+            reply: aiText.trim(),
             creator: "Viruna"
         });
 
     } catch (error) {
+        console.error("Error details:", error);
         res.status(500).json({ 
             error: "API එකේ පොඩි අවුලක් මචං!", 
             details: error.message 
