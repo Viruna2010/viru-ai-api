@@ -13,16 +13,19 @@ app.get('/api/chat', async (req, res) => {
         return res.status(400).json({ error: "මැසේජ් එකක් එවන්න මචං!" });
     }
 
+    // මූට දෙන පට්ට නීති මාලාව
     const SYSTEM_PROMPT = "Your name is VIRU AI, created by Viruna. Speak in casual Sri Lankan Sinhala with 'මචං','එල','ගැම්ම'. If user speaks English, reply in English. Use emojis. Keep it short.";
 
     try {
-        // Axios වෙනුවට Native Fetch පාවිච්චි කරමු - මේක වඩාත් Stable
-        const url = `https://text.pollinations.ai/${encodeURIComponent(userMsg)}?system=${encodeURIComponent(SYSTEM_PROMPT)}&model=mistral-7b&cache=false`;
+        // 🚀 අලුත්ම Endpoint එක: /prompt/ පාවිච්චි කරමු
+        const url = `https://text.pollinations.ai/prompt/${encodeURIComponent(userMsg)}?system=${encodeURIComponent(SYSTEM_PROMPT)}&model=mistral-7b`;
         
         const response = await fetch(url);
         
         if (!response.ok) {
-            throw new Error(`Pollinations API error: ${response.status}`);
+            // මෙතනදී error එකක් ආවොත් ඒකෙ විස්තරේ මෙතනින් බලාගන්න පුළුවන්
+            const errorBody = await response.text();
+            throw new Error(`Status: ${response.status} - ${errorBody}`);
         }
 
         const aiText = await response.text();
@@ -33,7 +36,6 @@ app.get('/api/chat', async (req, res) => {
         });
 
     } catch (error) {
-        console.error("Error details:", error);
         res.status(500).json({ 
             error: "API එකේ පොඩි අවුලක් මචං!", 
             details: error.message 
