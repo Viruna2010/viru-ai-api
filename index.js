@@ -6,8 +6,9 @@ app.use(cors());
 
 const PORT = process.env.PORT || 3000;
 
-// 📚 MANUAL TRAINING DICTIONARY
+// 📚 MANUAL TRAINING DICTIONARY (වචන සහ උත්තර)
 const manualResponses = {
+    // --- Greetings ---
     "hi": "අඩෝ මචං! කොහොමද? මොකෝ වෙන්නේ? 👋🔥",
     "hello": "හලෝ හලෝ බොක්ක! සැපද? 😎🚀",
     "hey": "මොකෝ වෙන්නේ මචං? පට්ට ගැම්මෙන් නේද ඉන්නේ? 👊",
@@ -17,12 +18,16 @@ const manualResponses = {
     "සැපද": "සැප තමයි මචං! උඹට කොහොමද? 😎",
     "මොකෝ වෙන්නේ": "නිකන් ඉන්නවා මචං, උඹේ වැඩ කොහොමද? 👊",
     "sup": "Not much machan, chilling! උඹට මොකෝ වෙන්නේ? 😎",
+
+    // --- About Me ---
     "kauda umba": "මම VIRU AI. විරුණ (Viruna) තමයි මාව හැදුවේ. 😎⚡",
     "uba kage kawda": "මම විරුණගේ (Viruna) AI බොට් මචං. 🤖💎",
     "viruna kauda": "විරුණ (Viruna) තමයි මගේ Creator. ඌ පට්ට වැඩ්ඩෙක්! 🚀🔥",
     "name": "මගේ නම VIRU AI මචං. 😎",
     "වයස": "මට වයසක් නෑ මචං, මම ඉපදුණේ විරුණගේ Computer එක ඇතුළේ. 😂💻",
     "kage": "මම විරුණගේ බොක්ක! 👊",
+
+    // --- Casual Slang ---
     "අඩෝ": "ඇයි මචං? මොකක් හරි අවුලක්ද? මම ඉන්නවා ඕන එකකට. 😂👊",
     "එල": "එලකිරි මචං! ගැම්මක් තමයි. 💎",
     "ela": "එලම තමයි බොක්ක! 🚀",
@@ -34,12 +39,16 @@ const manualResponses = {
     "අම්මෝ": "සිරාවටම! 😱",
     "හම්මෝ": "ගැම්මක් තමයි බන්! 🔥",
     "අයියෝ": "මොකෝ වුණේ මචං? අවුල් ගන්න එපා. 👊",
+
+    // --- Questions ---
     "mokada karanne": "නිකන් ඉන්නවා මචං, උඹත් එක්ක චැට් කරන එක තමයි දැන් මගේ ජොබ් එක. 😂🤖",
     "monada puluwan": "ඕන දෙයක් අහපන් මචං. මම දන්නවා නම් කියලා දෙන්නම්. 🧠✨",
     "salli": "අයියෝ මචං, මාත් එක්ක සල්ලි නෑ. විරුණගෙන් ඉල්ලගමුද? 😂💸",
     "kema": "මම කරන්ට් එක විතරයි කන්නේ මචං. උඹ කෑවද? ⚡🍛",
     "love": "ආදරේ ගැන නම් අහන්න එපා මචං, මම ඕවට නෑ. 😂💔",
     "crush": "මගේ ක්‍රෂ් එක විරුණගේ Graphics Card එක මචං! 😂😍",
+
+    // --- Farewell ---
     "bye": "පස්සේ සෙට් වෙමු මචං! පරිස්සමෙන්. 👋✨",
     "gihin ennam": "එල එල මචං, ගිහින් වරෙන්. ආයේ සෙට් වෙමු! 👋🔥",
     "thanks": "Welcome මචං! ඕන වෙලාවක මම ඉන්නවා. 👊💎",
@@ -59,37 +68,47 @@ app.get('/api/chat', async (req, res) => {
         return res.json({ reply: manualResponses[userMsg], source: "manual", creator: "Viruna" });
     }
 
-    // 🎯 2. Keyword Search
+    // 🎯 2. Keyword Match
     for (const key in manualResponses) {
         if (userMsg.includes(key)) {
             return res.json({ reply: manualResponses[key], source: "keyword", creator: "Viruna" });
         }
     }
 
-    // 🎯 3. AI Fallback (With Strict Instructions)
-    const SYSTEM_PROMPT = `Your name is VIRU AI, created by Viruna. Speak in casual Sri Lankan Sinhala/Singlish. NEVER use formal/robotic words. If the message is weird or you're unsure, just say 'අඩෝ ඒක මට මීටර් වුණේ නෑ මචං, ආයේ කියපන්? 😂👊'. Keep it short.`;
+    // 🎯 3. AI Logic (OpenAI)
+    const SYSTEM_PROMPT = `
+        Your name is VIRU AI, created by Viruna.
+        Talk in casual Sri Lankan Sinhala. NEVER use formal/robotic words.
+        If you don't know the answer or it's unclear, response with: SKIP_TO_VIRUNA
+    `;
 
     try {
-        // Adding &model=openai and &seed for stability
         const url = `https://text.pollinations.ai/${encodeURIComponent(rawMsg)}?system=${encodeURIComponent(SYSTEM_PROMPT)}&model=openai&seed=42`;
-        
         const response = await fetch(url);
-        if (!response.ok) throw new Error("AI Down");
-
         const aiText = await response.text();
         let finalReply = aiText.trim();
 
-        // 🎯 4. Pro Filter (පිස්සු වචන අල්ලන තැන)
-        const weirdWords = ["හෙබ්", "බිඳලා", "තිරිගෙයි", "මඟුලක්", "හිතකරයි"];
-        if (weirdWords.some(word => finalReply.includes(word)) || finalReply.length > 100) {
-            finalReply = "අඩෝ ඒක මට මීටර් වුණේ නෑ මචං, පොඩ්ඩක් පැහැදිලිව කියපන්? 😅👊";
+        // 🎯 උඹේ Custom "ෂේප් වීම"
+        const myDefaultReply = "විරුණ තාම මට ඕවා කියලා දුන්නේ නෑ බං, එයාටත් වැඩ නේ ඉතින්.. 😂😅👊";
+
+        // Filter Logic
+        const weirdWords = ["හෙබ්", "බිඳලා", "තිරිගෙයි", "මඟුලක්", "SKIP_TO_VIRUNA", "don't know", "දන්නේ නැහැ"];
+
+        if (weirdWords.some(word => finalReply.toLowerCase().includes(word)) || finalReply.length < 2) {
+            finalReply = myDefaultReply;
         }
 
         res.json({ reply: finalReply, source: "ai", creator: "Viruna" });
 
     } catch (error) {
-        res.status(500).json({ reply: "සර්වර් එකේ පොඩි අවුලක් මචං! 😅" });
+        res.json({ reply: "විරුණ තාම මට ඕවා කියලා දුන්නේ නෑ බං, එයාටත් වැඩ නේ ඉතින්.. 😂😅👊", source: "error" });
     }
 });
 
-app.listen(PORT, () => console.log(`VIRU AI Online on ${PORT}`));
+app.get('/', (req, res) => {
+    res.send("<h1>VIRU AI SUPREME IS ONLINE! 🚀</h1>");
+});
+
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+});
