@@ -6,7 +6,7 @@ app.use(cors());
 
 const PORT = process.env.PORT || 3000;
 
-// 📚 MANUAL TRAINING DICTIONARY (වචන සහ උත්තර)
+// 📚 MANUAL TRAINING DICTIONARY (උඹේ වචන ටික ඒ විදිහටම තියෙනවා)
 const manualResponses = {
     // --- Greetings ---
     "hi": "අඩෝ මචං! කොහොමද? මොකෝ වෙන්නේ? 👋🔥",
@@ -63,23 +63,23 @@ app.get('/api/chat', async (req, res) => {
         return res.status(400).json({ error: "මැසේජ් එකක් එවන්න මචං! 😅" });
     }
 
-    // 🎯 1. Manual Match (Exact)
+    // 🎯 1. මුලින්ම Manual ලිස්ට් එකේ Exact Match බලනවා
     if (manualResponses[userMsg]) {
         return res.json({ reply: manualResponses[userMsg], source: "manual", creator: "Viruna" });
     }
 
-    // 🎯 2. Keyword Match
+    // 🎯 2. Keyword Match බලනවා
     for (const key in manualResponses) {
         if (userMsg.includes(key)) {
             return res.json({ reply: manualResponses[key], source: "keyword", creator: "Viruna" });
         }
     }
 
-    // 🎯 3. AI Logic (OpenAI)
+    // 🎯 3. AI Logic
     const SYSTEM_PROMPT = `
         Your name is VIRU AI, created by Viruna.
-        Talk in casual Sri Lankan Sinhala. NEVER use formal/robotic words.
-        If you don't know the answer or it's unclear, response with: SKIP_TO_VIRUNA
+        Talk in casual Sri Lankan Sinhala. NEVER use formal words.
+        If you don't know the answer, reply ONLY with the word: SKIP_TO_VIRUNA
     `;
 
     try {
@@ -88,13 +88,15 @@ app.get('/api/chat', async (req, res) => {
         const aiText = await response.text();
         let finalReply = aiText.trim();
 
-        // 🎯 උඹේ Custom "ෂේප් වීම"
+        // 🎯 උඹේ Custom Signature Reply එක
         const myDefaultReply = "විරුණ තාම මට ඕවා කියලා දුන්නේ නෑ බං, එයාටත් වැඩ නේ ඉතින්.. 😂😅👊";
 
-        // Filter Logic
-        const weirdWords = ["හෙබ්", "බිඳලා", "තිරිගෙයි", "මඟුලක්", "SKIP_TO_VIRUNA", "don't know", "දන්නේ නැහැ"];
-
-        if (weirdWords.some(word => finalReply.toLowerCase().includes(word)) || finalReply.length < 2) {
+        // මෙතන තමයි Skip logic එක වැඩ කරන්නේ
+        if (
+            finalReply.toUpperCase().includes("SKIP_TO_VIRUNA") || 
+            finalReply.toLowerCase().includes("don't know") || 
+            finalReply.length < 2
+        ) {
             finalReply = myDefaultReply;
         }
 
